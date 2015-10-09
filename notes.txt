@@ -1,30 +1,15 @@
 Building a decision system
 
-Me
-Variable
-    a. input data
-        comes in as?
-            flags + data
-            line seperated txt
-            Maybe dict-like txt
-    b. output statements
-        level-fix relationship stored as?
-            line seperated txt
-            dict-like txt
-        comes out as?
-            LEVEL #: DO THE FOLLOWING
-        
-Static
-    a. decision tree
-        stored as?
-            tree-structured txt?
-            sequence of append? (1 condition: ajdslsajdla, 1 condition: sdjfoisdj, 2 condition: difjdsoijf, etc)
-            code-only 2d array?
-    parses, decides and outputs.
+1. Questions
+    a. Convert possible answers into a metric
+    b. Add Questions to graph
+        i. Ideally, easy to add/remove (parses a txt file)
+2. Apply metric to graph, come out with answer
+    a. Maybe shade decision paths?
+    b. Maybe note possible other problems associated with current ones.
+3. Toss out the answer.
 
 
+This would all be encased in a not awful GUI
+probably questions with selectable answers in a table
 
-User
-Input variables
-Computer checks where it ends up on tree
-print out the system
