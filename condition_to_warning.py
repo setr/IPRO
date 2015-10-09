@@ -1,5 +1,8 @@
 #!/usr/bin/python
 import argparse
+# this program compares the inputted condition values against the metrics for warning levels.
+
+
 
 # defaults; modified by argument flags
 filename = "vault_condition.txt" 
@@ -57,7 +60,6 @@ def getWarningLevels():
                     oldlen = len(conditions)
                 elif oldlen != len(conditions):
                     error = "Inconsistent condition number, found %d where previous was %d \nOn line: %d" % (len(conditions), oldlen, index)
-                    #error = "Inconsistent condition number, found " + len(conditions) + "where previous was" + oldlen + "\nOn line: " + index
                     raise IndexError(error)
                 newlevel = WarningLevel(level, comment, conditions)
                 levels.append(newlevel)
@@ -80,7 +82,6 @@ def main(curcond):
             "tree uses %d" % (len(curcond), condlen))
         raise IndexError(error)
 
-    # currentcond = [5,5,3,3]
     orderedLevels = sorted(levels, reverse=True)  # orders it, from highest to lowest.
     # checks each warning level's conditions against our current conditions
     # first match is all we need, since its in order of worst to best.
@@ -108,4 +109,3 @@ def parse():
 if __name__ == '__main__':
     conditions = parse()
     main(conditions)  
-

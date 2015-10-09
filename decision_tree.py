@@ -5,20 +5,9 @@ class Node:
         self.description = description
         self.children = []
         self.parents = []
-        decision = None  # this would be a function
+        decision = None  # this would be a function for directing movement to next child
         self.childpos = 0
         self.tag = False
-
-    def __iter__(self):
-        return self
-
-    def next(self):
-        if self.childpos < len(self.children):
-            self.childpos += 1
-            return self.children[self.childpos-1]
-        else:
-            self.childpos = 0
-            raise StopIteration()
 
     def add_child(self, other):
         self.children.append(other)
@@ -27,22 +16,32 @@ class Node:
     def add_children(self, others):
         for o in others:
             self.add_child(o)
-    
+
+    def cleanup(self):
+        self.tag = False
+        for c in self.children:
+            c.cleanup()
+
+    # does all the overhead processing for our traversal
+    # spits out an array of parent->child relationships
     def inorderArray(self):
         s = ""
-        s = self.inorder(s, self.parents[0])
-        s = filter(None,s.split("\n"))
+        s = self.inorder(s, None)
+        self.cleanup()                  # resets the tags to all false
+        s = filter(None,s.split("\n"))  # splits by line, removes empty 
         return s
-
+    
     def inorder(self, s, lastp):
         if not self.tag:
             self.tag = True
             for c in self.children:
                 s = c.inorder(s, self)
-        s += "%s -> %s \n" % (lastp.description, self.description)
+        if not lastp:
+            s += "root"
+        else:
+            s += "%s -> %s \n" % (lastp.description, self.description)
         return s
 
-#root = Node(None,"root",None,None)
 
 root = Node("root")
 A = Node("Question1")
@@ -58,12 +57,6 @@ J = Node("Question10")
 K = Node("Question11")
 L = Node("Question12")
 
-# root -> A
-# A -> {B, C, D, E}
-# D -> {E, C, F}
-# F -> {L, M, N}
-# C -> {X, Y, Z}
-
 root.add_child(A)
 A.add_children([B, C, D, E])
 D.add_children([E, C, F])
@@ -71,7 +64,7 @@ F.add_children([L, G, I])
 C.add_children([L, K, J])
 
 print "digraph G {"
-for i in sorted(A.inorderArray()):
+for i in sorted(root.inorderArray()):
     if i:
         print i.strip(),";"
 print "}"
