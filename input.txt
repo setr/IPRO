@@ -1,0 +1,29 @@
+# If the first character is #, the line is ignored
+# node structure is as follows, line seperated. Empty line splits nodes.
+
+# Node Name
+# Description
+# Series of conditions of the following form
+    # if [variable] [=, >, <, >=, <=] [value] go [node]
+    # else [node]
+
+A
+Question 1
+if co2 = 1 go B
+if methane = 2 go C
+if crack > 1 go D
+else E
+
+B
+Question2
+
+C
+Question3
+
+D
+Question4
+if crack > 1 go E
+
+E
+Question5
+

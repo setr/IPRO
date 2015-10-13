@@ -1,0 +1,7 @@
+# The values we're looking at, and the values they're assigned
+# empty lines and lines starting with '#' are ignored
+# format is [name] : [value]
+
+methane : 10
+crack : 5
+co2 : 8
