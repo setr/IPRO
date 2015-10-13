@@ -1,5 +1,8 @@
 # If the first character is #, the line is ignored
-# node structure is as follows, line seperated. Empty line splits nodes.
+# The node name currently needs to be single word.
+# The description currently needs to be only on one line.
+
+# Node structure is as follows, line seperated. Empty line splits nodes.
 
 # Node Name
 # Description
