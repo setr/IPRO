@@ -1,14 +1,13 @@
-# IPRO
-ipro code
+# IPRO Code
 
 Currently the main file is 2.py, which reads input.txt and vals.txt. 
 
 Input.txt contains a decision tree of the given node format, intended to be easily modified. Written line by line.
 ```
-  line1: node_name
-  line2: node_description
-  line+: conditionals declaring which node_name to goto next
-  linex+1: line break
+  line_1: node_name
+  line_2: node_description
+  line_n..+: conditionals declaring which node_name to goto next
+  line_n..+1: line break
 ```
 and then the next node can begin, with the same format.
 
