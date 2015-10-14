@@ -25,6 +25,22 @@ def read():
 
     # if [condition] go [target]
     # basically just stores that shit
+    class conj:
+        def __init__(self, join, func1, func2):
+            self.func1 = func1
+            self.func2 = func2
+            self.act = None
+            if join == "and":
+                self.act = andj
+            elif join == "or":
+                self.act = orj
+            else:
+                raise Exception("invalid join")
+        def andj(self, state):
+            return (func1.act(state) and func2.act(state))
+        def orj(self, state):
+            return (func1.act(state) or func2.act(state))
+
     class func:
         def __init__(self, name, act, val, out):
             self.name = name

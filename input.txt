@@ -7,8 +7,18 @@
 # Node Name
 # Description
 # Series of conditions of the following form
-    # if [variable] [=, >, <, >=, <=] [value] go [node]
+    # if [condition] [value] go [node]
     # else [node]
+# if statements can have an infinite number of conditions using 'and' and 'or'
+    # if [condition] [and|or] [condition] go [node]
+# conditions are read left to right. 
+    # A and B or C and F 
+    # becomes
+    # ((((A and B) or C) and F)
+# and first line that evaluates to true is executed.
+
+# node with no conditionals are leaf nodes
+# we must end with a leaf node for program to execute successfully.
 
 A
 Question 1
@@ -25,8 +35,17 @@ Question3
 
 D
 Question4
-if crack > 1 go E
+if crack < 3 go F
+#if crack > 1 or methane < 1 go E
+if crack > 1 or methane < 1 or co2 = 1 and methane = 1 go G
+else F
 
 E
 Question5
+
+F
+Question6
+
+G
+Question7
 
