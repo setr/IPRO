@@ -1,5 +1,12 @@
 # IPRO Code
 
+## Only thing actually being used out of this is particle_code
+    dashboard.particle.io
+    
+    Just shove it onto a particle photon, correct the analog inputs, and it should log everything to your account's particle dashboard. 
+    
+## NOT IN USE
+
 Currently the main file is 2.py, which reads input.txt and vals.txt. 
 
 Input.txt contains a decision tree of the given node format, intended to be easily modified. Written line by line.
