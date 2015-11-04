@@ -1,0 +1,288 @@
+// This #include statement was automatically added by the Particle IDE.
+#include "SHT1x/SHT1x.h"
+
+ 
+ 
+/* SENSORS
+    SHT Sensor: D10, D11; http://www.dfrobot.com/wiki/index.php?title=SHT1x_Humidity_and_Temperature_Sensor_(SKU:_DFR0066)
+    CO2 Sensor: A3; http://www.dfrobot.com/wiki/index.php/CO2_Sensor_SKU:SEN0159
+    MQ2 Sensor: A5; http://www.dfrobot.com/wiki/index.php/Analog_Gas_Sensor_SKU:SEN0127
+    Water Height: A2
+    PH Sensor:  A0; http://dfrobot.com/wiki/index.php/Analog_pH_Meter_Pro_SKU:SEN0169
+*/
+
+/* ARDUINO
+    We're using a Particle Photon
+    This board is basically an arduino teensy with integrated wifi
+    It also allows us to flash the firmware over wifi, and gives us access to Particle's dashboard.particle.io
+        which is just a website we can store our logs at for now. It also lets us get the data back out as a json file
+    They also intend to add automatic graph generation for the logs, which would be very convenient, though its not up as of fall 2015
+    It's mostly just a very convenient little package. It offers no necessary benefits, and could easily be swapped.
+    
+    ~~~ Creds for Particle Acc ~~~
+    Username: nokhand@gmail.com
+    Password: IPRO417
+*/
+
+
+#define arraysize   (20)
+#define CO2Pin      (A3)        
+#define MQ2Pin      (A5)
+#define PHPin       (A0)
+#define WHPin       (A2)
+#define SHTDataPin  (0)
+#define SHTClockPin (1)
+
+#define printdelay  (1000)
+#define MQ2R0       (0)             // resistance in ambient air
+#define voltConv    (5.0/1023)      // conversion from analog values into voltage (assuming 5V input)
+#define PHoffset    (-1.5)
+SHT1x sht1x(SHTDataPin, SHTClockPin);       //handles all the work for the temp/humidity :-)
+
+
+/* These arrays hold the voltage values returned from the sensor
+    They'll be averaged out before conversion into useable values
+    Temp/Humidity arrays hold their final values (farenheight/percentage) simply because the SHT1x library handles the conversions for me
+    So I just average out the final values and output it with no further conversions.
+*/
+int CO2Avg[arraysize] = {0};        // {0}; initializes all values in array to 0.
+int MQ2Avg[arraysize] = {0};        // MQ2 = Methane ... which is actually a sensor for combustible gasses in general. However, we only actually care about methane.
+int PHAvg[arraysize] = {0};         // PH sensor
+int TempAvg[arraysize] = {0};       
+int HumAvg[arraysize] = {0};
+int WHAvg[arraysize] = {0};         // water height
+
+
+
+int curCount = 0;
+bool firstDone = false;             //for first use of the program.. start doing things only once we've filled up the arrays at least once..
+long lasttime;
+
+
+// I don't know why an empty handler is sufficient, but it is
+// This is to setup the subscription to the Particle logging website
+// void myHandler(const char *event, const char *data)
+// {
+    
+    
+// }
+
+void setup(){
+    //Particle.subscribe("temperature", myHandler);
+    Serial.begin(9600);
+    pinMode(CO2Pin, INPUT);
+    digitalWrite(CO2Pin, HIGH);
+    lasttime = millis();
+}
+
+void loop(){
+    
+    getData();                      // looks at each sensor, adds a value to the sensor's array
+    
+    if (firstDone && (millis() - lasttime) >= printdelay){                  // let the arrays fill up with data before trying to do anything; just need to print shit every x seconds..
+        lasttime = millis();
+        
+        int co2ppm = getCO2();  // CO2 has to do some conversions 
+        float mq2ppm = getR0();  // MQ2 has to do some conversions
+        int WH = getWaterHeight();
+        double ph = getPH(); 
+        int temp = AvgRead(TempAvg);    // don't gotta do 'nuffin, SHT1x :-)
+        int hum = AvgRead(HumAvg);
+
+        
+        String co2out;
+        String WHout;
+        
+        //co2
+        if (co2ppm == -1)
+            co2out = "<400";
+        else
+            co2out = String(co2ppm);
+            
+        //Water height
+        if (WH == -1)
+            WHout = "<1";
+        else if (WH == 13)
+            WHout = ">12";
+        else
+            WHout = String(WH);
+
+        /* This section just pushes everything to particle's logging server: dashboard.particle.io
+            Particle.publish has a restriction that only 4 items can be published within a second
+            If you publish 4 items a second for 4 seconds, it has to "rest" for 4 seconds
+            It'll just drop anything you try to send beyond these limits, thus the delay(1000)
+            
+            The docs make it out as if it were a hardware constraint, but I'm 99% sure it's just
+            a hardcoded software limitation in the Particle API. They just don't want users pushing 
+            data to their servers too often, as too many users will overload their network/servers.
+            Anyways, these constraints are perfectly acceptable for our purposes.
+        */
+        Particle.publish("CO2 ppm", co2out, 60);
+        Particle.publish("MQ2 ppm", String(mq2ppm), 60);
+        Particle.publish("pH", String(ph), 60);
+        delay(1000);
+        Particle.publish("Water Height", WHout, 60); 
+        Particle.publish("TMP", String(temp), 60);
+        Particle.publish("HUM", String(hum), 60);
+        
+        
+        // Serial.print("CO2:"); Serial.print(co2ppm); Serial.println(" ppm");
+        // Serial.print("MQ2:"); Serial.print(mq2ppm); Serial.println(" ppm");
+        // Serial.print("pH :"); Serial.print(ph);     Serial.println("");
+        // Serial.print("TMP:"); Serial.print(temp, DEC);   Serial.println("F");
+        // Serial.print("HUM:"); Serial.print(hum, DEC);    Serial.println("%");
+    }
+    delay(100);
+}
+
+/********
+    GENERIC SENSOR FUNCTIONS
+********/
+
+// goes through all our sensors, and adds a value to the array
+void getData(){
+    curCount++;
+    if (curCount >= arraysize){
+        firstDone = true;           //the entire array has been filled with data at least one time..
+        curCount = 0;
+    }
+    
+    CO2Avg[curCount] = analogRead(CO2Pin);
+    MQ2Avg[curCount] = analogRead(MQ2Pin);
+    PHAvg[curCount] = analogRead(PHPin);
+    WHAvg[curCount] = analogRead(WHPin);
+    TempAvg[curCount] = getTemp();
+    HumAvg[curCount] = getHum();
+}
+
+// just does a simple averaging of the values in the given array
+float AvgRead(int *arr)
+{
+    int len = arraysize;
+    int total = 0;
+    for (int i = 0; i < len; i++){
+        total += arr[i];
+    }
+    float avg = (total/len);
+    return avg;
+}
+
+/*******
+    WATER HEIGHT FUNCTIONS
+*******/
+
+// Calculations determined by MATT
+int getWaterHeight(){
+    float voltage;
+    float water_res;
+    
+    voltage = AvgRead(WHAvg) * voltConv;
+    water_res = (2000 * voltage) / (5 - voltage);
+
+    if (water_res >= 2200)  // less than 1 inch
+        return -1;
+    else if (water_res > 400)   // between 1 and 12 inches
+        return (-159.091 * water_res) + 2359.091;   // conversion from resistance to inches
+    else
+        return 13;  // greater than 12 in;
+}
+
+/*******
+    PH FUNCTIONS
+********/
+/* http://dfrobot.com/wiki/index.php/PH_meter(SKU:_SEN0161)
+    original author unknown; editor: YouYou
+*/
+int getPH(){
+    //voltage -> pH is apparently linear, so a simple addition/subtraction should be sufficient for calibration
+    //it was determining 8.5 for plain water, so subtract 1.5 to bring it back in line (1.5 => PHoffset; defined in preprocessor section)
+    
+    float voltage = AvgRead(PHAvg) * voltConv;
+    float pHValue = 3.5*voltage + PHoffset;
+    return pHValue;
+}
+
+/*******
+    SHT FUNCTIONS
+********/
+/* https://github.com/practicalarduino/SHT1x
+    authors: Jonathan Oxer and Maurice Ribble
+*/
+int getTemp(){
+    return int(sht1x.readTemperatureF());
+}
+int getHum(){
+    return int(sht1x.readHumidity());
+}
+
+/*******
+    MQ2 FUNCTIONS
+********/
+// Calculations determined by MATT
+
+
+/* this just gets the voltage at ambient air, which we'll use as our constant after we get it the first time
+   this function is ONLY for calibration; we should never have to call it in normal usage
+*/
+float getR0(){
+    float voltage;
+    float RS_air;
+    float R0;
+    
+    voltage = AvgRead(MQ2Avg) * voltConv;
+    RS_air = (5.0-voltage)/voltage; //omit *RL
+    R0 = RS_air/9.8;  // ratio of RS/R0 is 9.8 in clean air, according to graph (calculated with WebPlotDigitizer)
+    return R0;
+}
+
+
+/* 
+ Sensor readings are dependent upon temperature and humidity; we are assuming minimal variation and standard conditions.
+ For optimal calibration we would use the potentiometer to adjust readings and test with a known concentration of one of the gasses.
+ The output is made to give us an average ppm reading for the environments combustible gas, not the reading of specific gases.
+*/
+
+int getMQ2(){
+    float voltage;
+    float RS_gas;
+    float ratio;
+    float ppm;
+    float R0 = MQ2R0;   //ambient air? 
+    
+    voltage = AvgRead(MQ2Avg) * voltConv;
+    RS_gas = (5.0 - voltage) / voltage;
+    ratio = RS_gas / R0;
+    ppm = pow((26.859 / ratio), 0.57);        //ratio taken from the data sheet, converting voltage -> ppm
+    return int(ppm);
+}
+
+/*******
+   CO2 FUNCTIONS
+********/
+/* http://www.dfrobot.com/wiki/index.php/CO2_Sensor_SKU:SEN0159
+    original authors: Tiequan Shao, Peng Wei
+*/
+
+int getCO2(){
+    float ppm;
+    float volts;
+    
+    volts = AvgRead(CO2Avg) * voltConv;
+    ppm = getCO2ppm(volts);
+    return int(ppm);     
+}
+
+// from DFROBOT wiki for CO2 volt -> ppm conversion
+float getCO2ppm(float volts){
+    float DC_GAIN = 8.5;                //DC gain of amplifier (?)
+    float ZERO_POINT_VOLTAGE = 0.324;       //voltage at 400 ppm
+    float REACTION_VOLTAGE = 0.020;     //voltage drop moving into 1000ppm
+    
+    float CO2Curve[3]  =  {2.602,ZERO_POINT_VOLTAGE,(REACTION_VOLTAGE/(2.602-3))};
+    
+    if ((volts/DC_GAIN )>=ZERO_POINT_VOLTAGE) {
+        return -1;
+    } else { 
+        return pow(10, ((volts/DC_GAIN)-CO2Curve[1])/CO2Curve[2]+CO2Curve[0]);
+    }
+}
