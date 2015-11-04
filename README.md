@@ -1,9 +1,9 @@
 # IPRO Code
 
 ## Only thing actually being used out of this is particle_code
-    dashboard.particle.io
-    
-    Just shove it onto a particle photon, correct the analog inputs, and it should log everything to your account's particle dashboard. 
+dashboard.particle.io
+
+Just shove it onto a particle photon, correct the analog inputs, and it should log everything to your account's particle dashboard. 
     
 ## NOT IN USE
 
