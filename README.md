@@ -18,7 +18,7 @@ Input.txt contains a decision tree of the given node format, intended to be easi
 ```
 and then the next node can begin, with the same format.
 
-Conditionals are in the form: `if [cond] [(and|or) (cond)] go node_name` with infinite depth for the and/ors. 
+Conditionals are in the form: `if [cond] [(and|or) (cond)] go node_name` with infinite recursive depth for the conditionals. 
 
 Reads left to right, so `A and B or C or F` becomes `(((A and B) or C) or F)`
 
