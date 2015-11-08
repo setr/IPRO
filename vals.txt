@@ -1,9 +1,0 @@
-# The values we're looking at, and the values they're assigned
-# empty lines and lines starting with '#' are ignored
-# format is [name] : [value]
-# names must be one word (not seperated by spaces)
-# otherwise, spacing doesn't matter. Pair must be on a single line.
-
-methane : 10
-crack : 5
-co2 : 8

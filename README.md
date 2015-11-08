@@ -5,6 +5,9 @@ dashboard.particle.io
 
 Just shove it onto a particle photon, correct the analog inputs, and it should log everything to your account's particle dashboard. 
     
+questionset.txt is just the skeleton java class & instantiation code for the GUI implementation. Passed it off to Yalinne and she took care of the rest.
+The question tree is from Bryan and Kevin's work.
+
 ## NOT IN USE
 
 Currently the main file is 2.py, which reads input.txt and vals.txt. 
