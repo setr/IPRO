@@ -1,0 +1,112 @@
+public class QnA {
+    String question;
+    String[] answers;
+    int[] values;
+
+    public QnA(String question, String[] answers, int[] values){
+        this.question = question;
+        this.answers = answers;
+        this.values = values;
+    }
+}
+
+public QnA[] getQuestions(){
+    QnA[] q_set = new QnA[9];
+    String question;
+    String[] answers;
+    int[] values;
+    QnA newQ;
+    int counter = 0
+        
+    question = "Whats the current water level?";
+    answers = new String[] { 
+            "No Water",
+            "6 to 24 inches of water",
+            "water is near the equipment",
+            "water is above the equipment"};
+    values = new int[] {0,5,10,15};
+    newQ = new QnA(question, answers, values);
+    q_set[counter] = newQ;
+
+
+    question = "Are there cracks?";
+    answers = new String[]{
+        "No cracks",
+        "Multiple small cracks",
+        "Multiple long cracks (<1 inch)",
+        "Any cracks greater than an inch"};
+    values = new int[] {0,5,10,20};
+    newQ = new QnA(question, answers, values);
+    counter++;
+    q_set[counter] = newQ;
+
+    question = "Safety issues?";
+    answers = new String[]{
+        "No concerns",
+        "Danger to pedestrians (cover, settling)",
+        "Danger to maintenance (unstable structure, equipment failure)",
+        "Danger of collapse"};
+    values = new int[] {0,15,25,40};
+    newQ = new QnA(question, answers, values);
+    counter++;
+    q_set[counter] = newQ;
+
+    question = "Is the Temperature greater than 120F?";
+    answers = new String[]{
+        "Yes",
+        "No"};
+    values = new int[] {0,10};
+    newQ = new QnA(question, answers, values);
+    counter++;
+    q_set[counter] = newQ;
+
+    question = "Is the humidity greater than 80%?";
+    answers = new String[]{
+        "Yes",
+        "No"};
+    values = new int[] {0,5};
+    newQ = new QnA(question, answers, values);
+    counter++;
+    q_set[counter] = newQ;
+
+    question = "Does the air contain greater than 5% methane?";
+    answers = new String[]{
+        "Yes",
+        "No"};
+    values = new int[] {0,20};
+    newQ = new QnA(question, answers, values);
+    counter++;
+    q_set[counter] = newQ;
+
+    question = "Are the C02 levels too high?";
+    answers = new String[]{
+        "Yes",
+        "No"};
+    values = new int[] {0,2};
+    newQ = new QnA(question, answers, values);
+    counter++;
+    q_set[counter] = newQ;
+
+    question = "If there is water, whats the pH?"",;
+    answers = new String[]{
+        "Acidic (<5)",
+        "Neutral (5-9)",
+        "Alkaline (>9)"};
+    values = new int[] {5,0,5};
+    newQ = new QnA(question, answers, values);
+    counter++;
+    q_set[counter] = newQ;
+
+    question = "Is there any settling or seperation?";
+    answers = new String[]{
+        "No settling/seperation",
+        "Visible settling/seperation",
+        "Significant settling/seperation",
+        "Severe settling/seperation"};
+    values = new int[] {0,5,10,30};
+    newQ = new QnA(question, answers, values);
+    counter++;
+    q_set[counter] = newQ;
+
+    return q_set;
+}
