@@ -17,4 +17,3 @@ Streams data to plot.ly for graphing, on multiple subgraphs.
 
 Currently working with generated test data, tested from 1 to 4 streams.
 
-Needs to be changed to stream code in from dashboard.particle.io, and forward that to plot.ly

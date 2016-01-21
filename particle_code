@@ -59,16 +59,8 @@ bool firstDone = false;             //for first use of the program.. start doing
 long lasttime;
 
 
-// I don't know why an empty handler is sufficient, but it is
-// This is to setup the subscription to the Particle logging website
-// void myHandler(const char *event, const char *data)
-// {
-    
-    
-// }
 
 void setup(){
-    //Particle.subscribe("temperature", myHandler);
     Serial.begin(9600);
     pinMode(CO2Pin, INPUT);
     digitalWrite(CO2Pin, HIGH);
@@ -171,7 +163,7 @@ float AvgRead(int *arr)
     WATER HEIGHT FUNCTIONS
 *******/
 
-// Calculations determined by MATT
+// Calculations determined by Matt 
 int getWaterHeight(){
     float voltage;
     float water_res;
@@ -219,7 +211,6 @@ int getHum(){
     MQ2 FUNCTIONS
 ********/
 // Calculations determined by MATT
-
 
 /* this just gets the voltage at ambient air, which we'll use as our constant after we get it the first time
    this function is ONLY for calibration; we should never have to call it in normal usage
