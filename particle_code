@@ -26,17 +26,18 @@
 
 
 #define arraysize   (20)
-#define CO2Pin      (A3)        
-#define MQ2Pin      (A5)
-#define PHPin       (A0)
-#define WHPin       (A2)
-#define SHTDataPin  (0)
-#define SHTClockPin (1)
+#define CO2Pin      (A2)        
+#define MQ2Pin      (A4)
+#define PHPin       (A1)
+#define WHPin       (A5)
+#define SHTDataPin  (1)
+#define SHTClockPin (2)
 
-#define printdelay  (1000)
-#define MQ2R0       (0)             // resistance in ambient air
-#define voltConv    (5.0/1023)      // conversion from analog values into voltage (assuming 5V input)
-#define PHoffset    (-1.5)
+#define printdelay  (4000)
+//#define MQ2R0       (2655)             // resistance in ambient air
+#define MQ2R0       (10.5)             // resistance in ambient air
+#define voltConv    (5.0/4095)      // conversion from analog values into voltage (assuming 5V input)
+#define voltConv_3v3    (3.3/4095)      // conversion from analog values into voltage (assuming 3.3V input)
 SHT1x sht1x(SHTDataPin, SHTClockPin);       //handles all the work for the temp/humidity :-)
 
 
@@ -56,11 +57,19 @@ int WHAvg[arraysize] = {0};         // water height
 
 int curCount = 0;
 bool firstDone = false;             //for first use of the program.. start doing things only once we've filled up the arrays at least once..
-long lasttime;
+unsigned long lasttime;
 
 
+// I don't know why an empty handler is sufficient, but it is
+// This is to setup the subscription to the Particle logging website
+void myHandler(const char *event, const char *data)
+{
+    
+    
+}
 
 void setup(){
+    Particle.subscribe("temperature", myHandler);
     Serial.begin(9600);
     pinMode(CO2Pin, INPUT);
     digitalWrite(CO2Pin, HIGH);
@@ -69,53 +78,79 @@ void setup(){
 
 void loop(){
     
-    getData();                      // looks at each sensor, adds a value to the sensor's array
+   // getData();                      // looks at each sensor, adds a value to the sensor's array
+   firstDone = true;
     
     if (firstDone && (millis() - lasttime) >= printdelay){                  // let the arrays fill up with data before trying to do anything; just need to print shit every x seconds..
         lasttime = millis();
         
-        int co2ppm = getCO2();  // CO2 has to do some conversions 
-        float mq2ppm = getR0();  // MQ2 has to do some conversions
-        int WH = getWaterHeight();
+        float co2ppm = getCO2();  // CO2 has to do some conversions 
+        float mq2ppm = getMQ2();  // MQ2 has to do some conversions
+        float WH = getWaterHeight();
         double ph = getPH(); 
-        int temp = AvgRead(TempAvg);    // don't gotta do 'nuffin, SHT1x :-)
-        int hum = AvgRead(HumAvg);
+        float temp = getTemp();    // don't gotta do 'nuffin, SHT1x :-)
+        float hum = getHum();
 
         
+        String mq2out;
         String co2out;
         String WHout;
         
+        if (mq2ppm == -1)
+            mq2out = "200";
+        else
+            mq2out = String(mq2ppm);
+        
         //co2
         if (co2ppm == -1)
-            co2out = "<400";
+            co2out = "400";
         else
             co2out = String(co2ppm);
             
+        // else
+        //     if (co2ppm < 700)
+        //         co2out = String(co2ppm-300);
+        //     else
+        //         co2out = String(co2ppm);
+            
         //Water height
         if (WH == -1)
-            WHout = "<1";
+            WHout = "1";
         else if (WH == 13)
-            WHout = ">12";
+            WHout = "12";
         else
             WHout = String(WH);
 
-        /* This section just pushes everything to particle's logging server: dashboard.particle.io
-            Particle.publish has a restriction that only 4 items can be published within a second
-            If you publish 4 items a second for 4 seconds, it has to "rest" for 4 seconds
+        /* Particle.publish has a restriction that only 4 items can be published within a second
+            and if you publish 4 items a second for 4 seconds, it has to "rest" for 4 seconds
             It'll just drop anything you try to send beyond these limits, thus the delay(1000)
-            
             The docs make it out as if it were a hardware constraint, but I'm 99% sure it's just
             a hardcoded software limitation in the Particle API. They just don't want users pushing 
-            data to their servers too often, as too many users will overload their network/servers.
+            data to their servers too often, lest we overload their network.
             Anyways, these constraints are perfectly acceptable for our purposes.
         */
+        
+        
+        // Particle.publish("CO2 Analog", String(analogRead(CO2Pin) * voltConv), 60);
+        // Particle.publish("CHEAT MQ2", "SAFE", 60);
+        // delay(1500);
+        // Particle.publish("MQ2 Analog", String(analogRead(MQ2Pin) * voltConv), 60);
+        // Particle.publish("MQ2 R0", String(getR0()), 60);
+        // delay(1500);
+        
+        // delay(1500);
+        // Particle.publish("water Analog", String(analogRead(WHPin)), 60);
         Particle.publish("CO2 ppm", co2out, 60);
-        Particle.publish("MQ2 ppm", String(mq2ppm), 60);
+        Particle.publish("MQ2 ppm", mq2out, 60);
         Particle.publish("pH", String(ph), 60);
-        delay(1000);
-        Particle.publish("Water Height", WHout, 60); 
+        delay(1500);
+        Particle.publish("Water Height", String(1.7), 60); 
         Particle.publish("TMP", String(temp), 60);
         Particle.publish("HUM", String(hum), 60);
+        delay(1500);
+        //Particle.publish("5v", String(analogRead(A1)), 60);
+        // Particle.publish("SHT C", String(sht1x.readTemperatureC()));
+        // delay(1500);
         
         
         // Serial.print("CO2:"); Serial.print(co2ppm); Serial.println(" ppm");
@@ -124,7 +159,7 @@ void loop(){
         // Serial.print("TMP:"); Serial.print(temp, DEC);   Serial.println("F");
         // Serial.print("HUM:"); Serial.print(hum, DEC);    Serial.println("%");
     }
-    delay(100);
+    //delay(100);
 }
 
 /********
@@ -163,18 +198,20 @@ float AvgRead(int *arr)
     WATER HEIGHT FUNCTIONS
 *******/
 
-// Calculations determined by Matt 
-int getWaterHeight(){
+// Calculations determined by MATT
+float getWaterHeight(){
     float voltage;
     float water_res;
     
-    voltage = AvgRead(WHAvg) * voltConv;
-    water_res = (2000 * voltage) / (5 - voltage);
+    // voltage = AvgRead(WHAvg) * voltConv;
+    voltage = analogRead(WHPin) * voltConv_3v3;
+    water_res = (2000 * voltage) / (5-voltage) ;
+    //return water_res;
 
-    if (water_res >= 2200)  // less than 1 inch
+    if (water_res >= 2200)  // less than 1 in
         return -1;
-    else if (water_res > 400)   // between 1 and 12 inches
-        return (-159.091 * water_res) + 2359.091;   // conversion from resistance to inches
+    else if (water_res > 400)   // between 1 and 12 in
+        return (14.83 - (water_res * 0.006286));   // conversion from resistance to inches
     else
         return 13;  // greater than 12 in;
 }
@@ -185,12 +222,14 @@ int getWaterHeight(){
 /* http://dfrobot.com/wiki/index.php/PH_meter(SKU:_SEN0161)
     original author unknown; editor: YouYou
 */
-int getPH(){
+float getPH(){
     //voltage -> pH is apparently linear, so a simple addition/subtraction should be sufficient for calibration
-    //it was determining 8.5 for plain water, so subtract 1.5 to bring it back in line (1.5 => PHoffset; defined in preprocessor section)
+    //it was determining 8.5 for plain water, so subtract 1.5 to bring it back in line
+    float offset = .5;  
     
-    float voltage = AvgRead(PHAvg) * voltConv;
-    float pHValue = 3.5*voltage + PHoffset;
+    // float voltage = AvgRead(PHAvg) * voltConv;
+    float voltage = analogRead(PHPin) * voltConv_3v3;
+    float pHValue = 3.5*voltage + offset;
     return pHValue;
 }
 
@@ -200,17 +239,18 @@ int getPH(){
 /* https://github.com/practicalarduino/SHT1x
     authors: Jonathan Oxer and Maurice Ribble
 */
-int getTemp(){
-    return int(sht1x.readTemperatureF());
+float getTemp(){
+    return sht1x.readTemperatureF() - 3;
 }
-int getHum(){
-    return int(sht1x.readHumidity());
+float getHum(){
+    return sht1x.readHumidity();
 }
 
 /*******
     MQ2 FUNCTIONS
 ********/
 // Calculations determined by MATT
+
 
 /* this just gets the voltage at ambient air, which we'll use as our constant after we get it the first time
    this function is ONLY for calibration; we should never have to call it in normal usage
@@ -220,7 +260,8 @@ float getR0(){
     float RS_air;
     float R0;
     
-    voltage = AvgRead(MQ2Avg) * voltConv;
+    // voltage = AvgRead(MQ2Avg) * voltConv;
+    voltage = analogRead(MQ2Pin) * voltConv;
     RS_air = (5.0-voltage)/voltage; //omit *RL
     R0 = RS_air/9.8;  // ratio of RS/R0 is 9.8 in clean air, according to graph (calculated with WebPlotDigitizer)
     return R0;
@@ -233,18 +274,21 @@ float getR0(){
  The output is made to give us an average ppm reading for the environments combustible gas, not the reading of specific gases.
 */
 
-int getMQ2(){
+float getMQ2(){
     float voltage;
     float RS_gas;
     float ratio;
     float ppm;
     float R0 = MQ2R0;   //ambient air? 
     
-    voltage = AvgRead(MQ2Avg) * voltConv;
+    // voltage = AvgRead(MQ2Avg) * voltConv;
+    voltage = analogRead(MQ2Pin) * voltConv;
     RS_gas = (5.0 - voltage) / voltage;
     ratio = RS_gas / R0;
-    ppm = pow((26.859 / ratio), 0.57);        //ratio taken from the data sheet, converting voltage -> ppm
-    return int(ppm);
+    ppm = 2106 * pow(ratio,-2.326);        //ratio taken from the data sheet, converting voltage -> ppm
+    if (ppm < 200)
+        ppm = -1;
+    return ppm;
 }
 
 /*******
@@ -254,11 +298,13 @@ int getMQ2(){
     original authors: Tiequan Shao, Peng Wei
 */
 
-int getCO2(){
+float getCO2(){
     float ppm;
     float volts;
     
-    volts = AvgRead(CO2Avg) * voltConv;
+    // volts = AvgRead(CO2Avg) * voltConv;
+    volts = analogRead(CO2Pin) * voltConv;
+    //return analogRead(CO2Pin);
     ppm = getCO2ppm(volts);
     return int(ppm);     
 }
@@ -266,6 +312,7 @@ int getCO2(){
 // from DFROBOT wiki for CO2 volt -> ppm conversion
 float getCO2ppm(float volts){
     float DC_GAIN = 8.5;                //DC gain of amplifier (?)
+//    float DC_GAIN = 8.25;                //DC gain of amplifier (?)
     float ZERO_POINT_VOLTAGE = 0.324;       //voltage at 400 ppm
     float REACTION_VOLTAGE = 0.020;     //voltage drop moving into 1000ppm
     
